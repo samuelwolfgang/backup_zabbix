@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+
+#-----------HEADER-------------------------------------------------------------|
+# AUTOR             : Samuel Wolfgang <jsamuelwolfgang@gmail.com>
+# DATA-DE-CRIACAO   : 13-08-2024
+# PROGRAMA          : BACKUP (Zabbix-Grafana-MariaDB)
+# VERSAO            : 1.0
+# LICENCA           : 
+# PEQUENA-DESCRICAO : Script que vai gerar backup dos princiais diretorios das aplicacoes: Zabbix, Grafana e MariaDB
+#
+# CHANGELOG :
+#
+#------------------------------------------------------------------------------|
+
+#--------------------------------- VARIAVEIS ---------------------------------->
+#
+DATE="$(date "+%d/%m/%Y %H:%M:%S")"
+BASEDIR=/root/$(date "+%d-%m-%Y")
+ZABBIX_FRONT=/usr/share/zabbix
+ZABBIX_LIB=/var/lib/zabbix
+ZABBIX_ETC=/etc/zabbix
+GRAFANA_LIB=/var/lib/grafana
+GRAFANA_ETC=/etc/grafana
+MARIADB_LIB=/var/lib/mysql
+#
+#------------------------------- FIM-VARIAVEIS --------------------------------<
+
+#---------------------------------- TESTES ------------------------------------>
+#
+if [ ! -d $BASEDIR ]; then
+    mkdir -p $BASEDIR
+else
+    clear
+    echo "Problema na BaseDir"
+    exit
+fi
+#
+#--------------------------------- FIM-TESTES ---------------------------------<
+
+#----------------------------------- FUNCOEES ---------------------------------->
+#
+function Backup_Zabbix() {
+    clear
+    tar cvzPf $BASEDIR/frontend_zabbix.tar.gz $ZABBIX_FRONT
+    tar cvzPf $BASEDIR/lib_zabbix.tar.gz $ZABBIX_LIB
+    tar cvzPf $BASEDIR/etc_zabbix.tar.gz $ZABBIX_ETC
+    clear
+    echo "BACKUP dos diretorios $ZABBIX_LIB, $ZABBIX_FRONT e $ZABBIX_ETC gerado com sucesso"
+    sleep 2
+}
+
+function Backup_Grafana() {
+    clear
+    tar cvzPf $BASEDIR/grafana.tar.gz $GRAFANA_LIB
+    tar cvzPf $BASEDIR/etc_grafana.tar.gz $GRAFANA_ETC
+    clear
+    echo "BACKUP dos diretorios $GRAFANA_LIB e $GRAFANA_ETC gerado com sucesso"
+    sleep 2
+}
+
+function Backup_MariaDB() {
+    clear
+    mysqldump -u root -p zabbix > $BASEDIR/mariadb_dump.sql
+    if [ $? != 0 ]; then
+        echo 'ERRO - Geracao do backup via DUMP' > $BASEDIR/backup_error.log
+	clear
+	echo 'ERRO - Geracao do backup via DUMP'
+	sleep 2
+    else
+        clear
+        echo "BACKUP via DUMP gerado com sucesso"
+	sleep 2
+    fi
+    clear
+    tar cvzPf "$BASEDIR/lib_mariadb.tar.gz" $MARIADB_LIB
+    clear
+    echo "BACKUP do $MARIADB_LIB gerado com sucesso"
+    sleep 2
+}
+
+function Finalizando() {
+    clear
+    tar cvzPf /root/backup/BACKUP_$(date "+%d-%m-%Y").tar.gz $BASEDIR
+    rm -R $BASEDIR
+    clear
+    echo 'Finalizado com Sucesso!'
+    echo 'Valide no Diretorio /root/backup'
+}
+#
+#--------------------------------- FIM-FUNCOES --------------------------------<
+
+clear
+echo "
++==========================================+
++  ____          _____ _  ___    _ _____   +
++ |  _ \   /\   / ____| |/ / |  | |  __ \  +
++ | |_) | /  \ | |    | ' /| |  | | |__) | +
++ |  _ < / /\ \| |    |  < | |  | |  ___/  +
++ | |_) / ____ \ |____| . \| |__| | |      +
++ |____/_/    \_\_____|_|\_\\____/|_|      +
++==========================================+"
+echo 'Iniciando o Backup...'
+
+Backup_Zabbix
+Backup_Grafana
+Backup_MariaDB
+Finalizando
